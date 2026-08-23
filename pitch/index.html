@@ -1,0 +1,733 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fit Happens — Pitch</title>
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<style>
+  :root {
+    /* Orange Whiskey's own world: a dim bar, oak rather than nightclub —
+       warm near-black instead of the cooler violet-black of the brief,
+       amber accent pulled from the glass, not off a shelf. */
+    --paper: #1A1512;
+    --surface: #241E19;
+    --surface-2: #2B241D;
+    --ink: #F3EDDD;
+    --ink-soft: #BFB4A0;
+    --ink-faint: #8A8071;
+    --brass: #E0954B;
+    --brass-rgb: 224, 149, 75;
+    --brass-strong: #EDAD6E;
+    --teal: #57AE9D;
+    --redink: #E27A5D;
+    --redink-rgb: 226, 122, 93;
+    --rule: #3B332A;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    background:
+      radial-gradient(ellipse 85% 65% at 14% 22%, rgba(var(--brass-rgb), 0.09), transparent 58%),
+      radial-gradient(ellipse 70% 60% at 88% 82%, rgba(var(--brass-rgb), 0.05), transparent 60%),
+      var(--paper);
+    color: var(--ink);
+    font-family: "Public Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    overflow: hidden;
+  }
+
+  h1, h2, h3, p { margin: 0; text-wrap: balance; }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: clamp(0.72rem, 1vw, 0.9rem);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass);
+    font-weight: 500;
+  }
+
+  /* ---------- Chrome: progress rope + counter ---------- */
+  .progress-rail {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--rule);
+    z-index: 30;
+  }
+  .progress-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, var(--brass-strong), var(--brass));
+    transform-origin: left center;
+    transform: scaleX(0.1);
+    transition: transform 0.5s cubic-bezier(.22,.61,.36,1);
+  }
+
+  .counter {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.75rem;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+    z-index: 30;
+  }
+  .counter strong { color: var(--ink-soft); }
+
+  .nav-hint {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 1.75rem;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    z-index: 30;
+    opacity: 1;
+    transition: opacity 0.6s ease;
+  }
+  .nav-hint.hidden { opacity: 0; }
+
+  .fullscreen-btn {
+    position: fixed;
+    top: 1.25rem;
+    right: 1.75rem;
+    z-index: 30;
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    background: transparent;
+    border: 1px solid var(--rule);
+    color: var(--ink-faint);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.4rem 0.9rem;
+    border-radius: 2px;
+    cursor: pointer;
+  }
+  .fullscreen-btn:hover { color: var(--ink); border-color: var(--brass); }
+  .fullscreen-btn:focus-visible { outline: 2px solid var(--brass-strong); outline-offset: 2px; }
+
+  .video-pause-btn {
+    position: fixed;
+    top: 1.25rem;
+    left: 1.75rem;
+    z-index: 30;
+    display: none;
+    align-items: center;
+    min-height: 2.75rem;
+    background: transparent;
+    border: 1px solid var(--rule);
+    color: var(--ink-faint);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.4rem 0.9rem;
+    border-radius: 2px;
+    cursor: pointer;
+  }
+  .video-pause-btn.visible { display: inline-flex; }
+  .video-pause-btn:hover { color: var(--ink); border-color: var(--brass); }
+  .video-pause-btn:focus-visible { outline: 2px solid var(--brass-strong); outline-offset: 2px; }
+
+  /* click zones for prev/next (invisible, whole-slide hit areas) */
+  .click-zone {
+    position: fixed;
+    top: 0; bottom: 0;
+    width: 50%;
+    z-index: 20;
+    cursor: pointer;
+  }
+  .click-zone.prev { left: 0; }
+  .click-zone.next { right: 0; }
+
+  /* ---------- Slides ---------- */
+  .deck { position: relative; height: 100vh; width: 100vw; }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(2rem, 6vw, 6rem);
+    overflow-y: auto;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  .slide.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    z-index: 10;
+  }
+
+  .slide-eyebrow { margin-bottom: clamp(1rem, 3vh, 2rem); }
+
+  .headline {
+    font-family: "Big Shoulders Display", sans-serif;
+    font-weight: 900;
+    text-transform: uppercase;
+    line-height: 0.95;
+    letter-spacing: -0.01em;
+    font-size: clamp(2.6rem, 7vw, 6rem);
+    max-width: 18ch;
+  }
+  .headline .accent {
+    color: var(--brass);
+  }
+  .headline .dim { color: var(--ink-soft); }
+
+  .subhead {
+    font-size: clamp(1.05rem, 2vw, 1.5rem);
+    color: var(--ink-soft);
+    max-width: 44ch;
+    margin-top: clamp(1rem, 3vh, 1.75rem);
+    font-weight: 400;
+  }
+
+  .kicker {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: clamp(0.85rem, 1.3vw, 1.05rem);
+    color: var(--ink-faint);
+    margin-top: clamp(0.75rem, 2vh, 1.25rem);
+    max-width: 50ch;
+  }
+
+  .slide-footnote {
+    position: absolute;
+    bottom: clamp(2rem, 6vh, 4rem);
+    left: clamp(2rem, 6vw, 6rem);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+    max-width: 42ch;
+  }
+
+  /* ---------- Slide 1: title ---------- */
+  .slide--title .wordmark {
+    font-family: "Big Shoulders Display", sans-serif;
+    font-weight: 900;
+    text-transform: uppercase;
+    line-height: 0.88;
+    font-size: clamp(3.5rem, 11vw, 9rem);
+  }
+  .slide--title .wordmark .fit { color: var(--ink); }
+  .slide--title .wordmark .happens {
+    color: var(--brass);
+  }
+  .team-line {
+    position: absolute;
+    bottom: clamp(2rem, 6vh, 4rem);
+    left: clamp(2rem, 6vw, 6rem);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.9rem;
+  }
+  .team-mark-inline {
+    width: 2.6em;
+    height: 2.6em;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+  .team-line-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .team-line .who {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.04em;
+  }
+
+  /* Team mark — our own logo, opposite the venue's on the right edge */
+  .team-mark {
+    position: absolute;
+    top: 50%;
+    right: clamp(2rem, 6vw, 6rem);
+    transform: translateY(-50%);
+    width: clamp(100px, 10vw, 150px);
+    height: auto;
+    opacity: 0.55;
+  }
+  .team-line .batch-tag {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--brass);
+    opacity: 0.75;
+    border-top: 1px solid var(--rule);
+    padding-top: 0.5rem;
+    width: fit-content;
+  }
+
+  /* Host venue credit — their mark, kept neutral rather than tinted amber */
+  .venue-logo {
+    position: absolute;
+    bottom: clamp(2rem, 6vh, 4rem);
+    right: clamp(2rem, 6vw, 6rem);
+    width: clamp(90px, 9vw, 130px);
+    height: auto;
+    color: var(--ink-soft);
+    opacity: 0.9;
+  }
+  .slide--close .venue-logo {
+    position: static;
+    margin-top: clamp(1.5rem, 4vh, 2.5rem);
+  }
+
+  /* ---------- Slide 3: two doormen ---------- */
+  .doormen-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(1.5rem, 4vw, 3rem);
+    margin-top: clamp(2rem, 5vh, 3.5rem);
+    max-width: 1200px;
+  }
+  .doorman-card {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    outline: 1px solid rgba(var(--brass-rgb), 0.22);
+    outline-offset: 5px;
+    border-radius: 4px;
+    padding: clamp(1.5rem, 3vw, 2.25rem);
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+  .doorman-tag {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    padding: 0.3em 0.7em;
+    border-radius: 2px;
+    align-self: flex-start;
+    color: var(--paper);
+    background: var(--ink);
+  }
+  .doorman-tag.teal { background: var(--teal); }
+  .doorman-card h3 {
+    font-family: "Big Shoulders Display", sans-serif;
+    font-size: clamp(1.5rem, 2.6vw, 2.1rem);
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .doorman-card p { color: var(--ink-soft); font-size: clamp(1rem, 1.5vw, 1.15rem); }
+
+  @media (max-width: 760px) { .doormen-grid { grid-template-columns: 1fr; } }
+
+  /* ---------- Slide 4: pipeline beats ---------- */
+  /* Grid, not flex: each row (num / word / desc) shares one track across all
+     beats, so cards align on their row regardless of how many lines a given
+     description wraps to. Flex align-items:center was centering each whole
+     card by its own total height instead. */
+  .beats {
+    display: grid;
+    grid-template-columns: repeat(9, auto);
+    grid-template-rows: auto auto auto;
+    column-gap: clamp(0.5rem, 2vw, 1.25rem);
+    row-gap: 0.4rem;
+    margin-top: clamp(2.5rem, 6vh, 4rem);
+  }
+  .beat {
+    grid-row: 1 / span 3;
+    display: grid;
+    grid-template-rows: subgrid;
+    row-gap: inherit;
+    min-width: 8rem;
+  }
+  .beat .beat-num {
+    font-family: "IBM Plex Mono", monospace;
+    color: var(--brass);
+    font-size: 0.85rem;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .beat .beat-word {
+    font-family: "Big Shoulders Display", sans-serif;
+    font-weight: 900;
+    text-transform: uppercase;
+    font-size: clamp(1.5rem, 3vw, 2.3rem);
+    line-height: 1;
+    align-self: start;
+  }
+  .beat .beat-desc { color: var(--ink-soft); font-size: 0.95rem; max-width: 14ch; align-self: start; }
+  .beat-arrow { grid-row: 2; align-self: center; color: var(--ink-faint); font-size: 1.6rem; }
+
+  @media (max-width: 760px) {
+    .beats { display: flex; flex-direction: column; gap: 1.5rem; }
+    .beat { display: flex; flex-direction: column; gap: 0.4rem; }
+    .beat-arrow { display: none; }
+  }
+
+  /* ---------- Slide 5: proof table ---------- */
+  .proof-table-wrap {
+    margin-top: clamp(1.75rem, 4vh, 2.5rem);
+    max-width: 1060px;
+    outline: 1px solid rgba(var(--brass-rgb), 0.22);
+    outline-offset: 6px;
+    overflow-x: auto;
+  }
+  table.proof {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: clamp(0.95rem, 1.5vw, 1.15rem);
+  }
+  table.proof th, table.proof td { text-align: left; padding: 0.65rem 1rem; border-bottom: 1px solid var(--rule); }
+  table.proof th {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 500;
+  }
+  table.proof td.num, table.proof th.num { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; text-align: right; }
+  table.proof td.hit { color: var(--teal); font-weight: 700; }
+  table.proof tr:last-child td { border-bottom: none; }
+  table.proof tr.ghosted { opacity: 0.4; }
+  table.proof tr.ghosted td { color: var(--ink-faint); }
+  table.proof tr.ghosted td.num { color: var(--ink-faint); }
+  tr.threshold-row td {
+    padding: 0.55rem 1rem;
+    border-top: 1px dashed rgba(var(--redink-rgb), 0.55);
+    border-bottom: 1px dashed rgba(var(--redink-rgb), 0.55);
+    background: rgba(var(--redink-rgb), 0.04);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.66rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--redink);
+    text-align: center;
+  }
+  .proof-caption { margin-top: 1.25rem; color: var(--ink-soft); font-size: clamp(0.95rem, 1.4vw, 1.1rem); max-width: 60ch; }
+
+  .pill {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 2px;
+    border: 1px solid var(--teal);
+    color: var(--teal);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+  }
+  .pill.flag { border-color: var(--redink); color: var(--redink); }
+  .pill.mid { border-color: var(--brass); color: var(--brass); }
+  .pill.none { border-color: var(--rule); color: var(--ink-faint); }
+
+  .next-step {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background-color: transparent;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238A8071' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.55rem center;
+    background-size: 0.6rem;
+    color: var(--ink-soft);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: 0.3rem 1.7rem 0.3rem 0.65rem;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+  }
+  .next-step:hover, .next-step:focus-visible { border-color: var(--brass); color: var(--ink); }
+  .next-step.interview { border-color: var(--teal); color: var(--teal); }
+  .next-step.review { border-color: var(--brass); color: var(--brass); }
+  .next-step.hold { border-color: var(--ink-faint); color: var(--ink-faint); }
+  table.proof tr.flagged td { background: rgba(var(--redink-rgb), 0.06); }
+
+  /* ---------- Slide 6: demo cue ---------- */
+  .slide--cue { align-items: flex-start; }
+  .slide--cue .headline { font-size: clamp(3rem, 9vw, 7.5rem); }
+
+  /* ---------- Slide 7: demo video ---------- */
+  .slide--video { align-items: center; }
+  .demo-video {
+    width: 100%;
+    max-width: 1400px;
+    max-height: calc(100vh - clamp(4rem, 12vw, 12rem));
+    border-radius: 4px;
+    outline: 1px solid rgba(var(--brass-rgb), 0.22);
+    outline-offset: 6px;
+    background: var(--paper);
+  }
+  .pulse-dot {
+    display: inline-block;
+    width: 0.6em; height: 0.6em;
+    border-radius: 50%;
+    background: var(--redink);
+    margin-right: 0.4em;
+    vertical-align: middle;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .pulse-dot { animation: pulse-dot 1.6s ease-in-out infinite; }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(0.72); }
+    }
+  }
+
+  /* ---------- Slide 7: house rules ---------- */
+  .rules-list { margin-top: clamp(1.75rem, 4vh, 2.5rem); display: flex; flex-direction: column; gap: 1rem; max-width: 56ch; }
+  .rule-line { display: flex; gap: 0.9rem; align-items: baseline; font-size: clamp(1.05rem, 1.8vw, 1.35rem); }
+  .rule-line .mark { color: var(--brass); font-family: "IBM Plex Mono", monospace; font-size: 0.9em; }
+
+  /* ---------- Slide 8: why now ---------- */
+  .stat-row { display: flex; gap: clamp(2rem, 5vw, 4rem); margin-top: clamp(2rem, 5vh, 3rem); flex-wrap: wrap; }
+  .stat { display: flex; flex-direction: column; gap: 0.3rem; }
+  .stat .stat-num {
+    font-family: "Big Shoulders Display", sans-serif;
+    font-weight: 900;
+    color: var(--brass);
+    font-size: clamp(2rem, 5vw, 3.4rem);
+    line-height: 1;
+  }
+  .stat .stat-label { color: var(--ink-soft); font-size: 0.95rem; max-width: 22ch; }
+
+  /* ---------- Slide 9: close ---------- */
+  .slide--close .headline { font-size: clamp(3.2rem, 9vw, 7.5rem); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .slide { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<svg style="display:none" aria-hidden="true"><symbol id="wolfsburg-logo" viewBox="0 0 214 71"><g clip-path="url(#clip0_1225_6394)"><path d="M57.8974 0H38.5952L0 37.275V52.3625H38.5952V71H57.8974V37.275H19.2931L57.8974 0Z" fill="currentColor"></path><path d="M66.168 18.6375L85.461 0H66.168V18.6375Z" fill="currentColor"></path><path d="M104.763 18.6375V0H85.461V18.6375L66.168 37.275V55.9125H85.461V37.275L104.763 18.6375Z" fill="currentColor"></path><path d="M104.763 37.2754L85.4609 55.9129H104.763V37.2754Z" fill="currentColor"></path><path d="M124.21 37.8057H122.734V56.5072H124.21V37.8057Z" fill="currentColor"></path><path d="M133.568 41.5938L134.816 48.1722L137.603 41.5938H139.097L140.327 48.1722L143.105 41.5938H145.419L141.064 51.5209H139.197L137.94 45.4914L135.271 51.5209H133.404L131.363 41.5938H133.568Z" fill="currentColor"></path><path d="M148.578 44.4395C148.031 45.0525 147.712 45.8851 147.712 46.7177C147.712 47.6235 148.04 48.3463 148.477 48.8038C149.115 49.49 149.88 49.6364 150.545 49.6364C151.21 49.6364 151.957 49.5357 152.649 48.7855C153.159 48.2365 153.524 47.3673 153.524 46.3426C153.524 45.7021 153.396 44.8969 152.777 44.2565C152.157 43.616 151.401 43.4788 150.828 43.4788C149.889 43.4788 149.142 43.8081 148.578 44.4303M154.435 42.6553C155.236 43.4788 155.765 44.7231 155.765 46.187C155.765 47.6509 155.3 49.1331 154.307 50.2036C153.123 51.4846 151.638 51.7408 150.399 51.7408C149.161 51.7408 147.922 51.5212 146.81 50.3226C146.164 49.6272 145.48 48.4744 145.48 46.8549C145.48 45.1165 146.145 43.7532 147.038 42.8657C148.241 41.658 149.698 41.3652 150.909 41.3652C152.722 41.3652 153.806 42.0331 154.435 42.6645" fill="currentColor"></path><path d="M160.12 41.5938L159.182 49.5904H162.124L161.897 51.5209H156.777L157.943 41.5938H160.12Z" fill="currentColor"></path><path d="M169.285 43.5243H166.234L166.006 45.4457H168.839L168.611 47.3854H165.778L165.286 51.5301H163.109L164.284 41.5938H169.513L169.285 43.5243Z" fill="currentColor"></path><path d="M175.249 44.018C174.657 43.4507 174.092 43.3043 173.664 43.3043C173.4 43.3043 173.017 43.3501 172.771 43.5605C172.571 43.7252 172.443 44.0088 172.443 44.2742C172.443 44.5761 172.571 44.7774 172.771 44.9421C172.972 45.1251 173.227 45.244 173.691 45.4636L174.238 45.7289C174.693 45.9577 175.112 46.2047 175.486 46.6805C175.823 47.1288 175.969 47.5863 175.969 48.2267C175.969 49.2698 175.577 50.1939 175.021 50.7703C174.256 51.5571 173.281 51.7401 172.325 51.7401C171.633 51.7401 171.077 51.6486 170.448 51.2918C169.984 51.0265 169.528 50.6239 169.191 50.2396L170.412 48.6019C170.612 48.8855 170.922 49.1966 171.205 49.3887C171.505 49.5809 171.897 49.7181 172.307 49.7181C172.635 49.7181 173.081 49.6175 173.354 49.407C173.609 49.1966 173.746 48.858 173.746 48.4829C173.746 48.1078 173.591 47.9156 173.473 47.7967C173.4 47.7235 173.218 47.5588 172.726 47.3484L172.17 47.1105C172.015 47.0464 171.296 46.7262 170.84 46.2321C170.385 45.7381 170.221 45.1708 170.221 44.5486C170.221 43.5239 170.612 42.7736 171.068 42.2979C171.833 41.511 172.808 41.3555 173.609 41.3555C174.411 41.3555 175.349 41.5202 176.342 42.3345L175.249 43.9997V44.018Z" fill="currentColor"></path><path d="M180.131 45.6287H180.568C180.933 45.6287 181.443 45.5829 181.771 45.2535C181.98 45.0431 182.099 44.6863 182.099 44.3569C182.099 43.9543 181.935 43.7347 181.798 43.6158C181.534 43.387 181.151 43.3779 180.842 43.3779H180.386L180.131 45.6287ZM179.648 49.7368H180.441C180.851 49.7368 181.516 49.691 181.853 49.3617C181.98 49.2427 182.19 48.9591 182.19 48.4101C182.19 48.1997 182.144 47.8886 181.935 47.669C181.625 47.3396 180.969 47.3213 180.778 47.3213H179.931L179.648 49.7368ZM178.419 41.5938H181.434C182.071 41.5938 182.918 41.6669 183.511 42.28C183.848 42.6276 184.121 43.2041 184.121 43.9818C184.121 44.6222 183.966 45.1255 183.684 45.528C183.374 45.9764 183.01 46.1868 182.691 46.2874C183.174 46.4064 183.529 46.6443 183.766 46.8822C184.203 47.3305 184.376 47.8154 184.376 48.465C184.376 49.5172 183.984 50.2034 183.611 50.5968C182.864 51.3837 181.762 51.5301 180.769 51.5301H177.262L178.419 41.5938Z" fill="currentColor"></path><path d="M188.976 41.5938L188.357 47.0194C188.32 47.3305 188.284 47.4677 188.284 47.8794C188.284 48.2912 188.338 48.7852 188.694 49.1604C188.949 49.4166 189.359 49.6087 189.942 49.6087C190.652 49.6087 191.089 49.3708 191.326 49.1146C191.791 48.6206 191.891 47.788 191.964 47.2207L192.611 41.5938H194.788L194.114 47.3762C193.968 48.5657 193.849 49.7734 192.993 50.6792C192.046 51.7039 190.68 51.7497 189.896 51.7497C188.958 51.7497 187.774 51.6307 186.908 50.7249C186.316 50.1119 186.07 49.3525 186.07 48.4284C186.07 47.9801 186.143 47.2664 186.189 46.8639L186.799 41.5938H188.976Z" fill="currentColor"></path><path d="M198.485 46.1044H199.023C199.378 46.1044 199.915 46.0587 200.298 45.7476C200.681 45.4365 200.781 45.0065 200.781 44.5856C200.781 44.2745 200.708 43.872 200.325 43.6158C200.043 43.4236 199.633 43.3779 199.141 43.3779H198.813L198.485 46.1044ZM199.797 41.5938C200.699 41.5938 201.591 41.6852 202.302 42.4904C202.63 42.8472 202.976 43.4877 202.976 44.5124C202.976 45.4548 202.666 46.1959 202.202 46.69C201.792 47.1109 201.227 47.3945 200.699 47.4952L203.131 51.5301H200.589L198.312 47.6141L197.857 51.5301H195.68L196.837 41.5938H199.788H199.797Z" fill="currentColor"></path><path d="M209.591 46.1047H213.999C213.927 48.6025 213.007 49.8377 212.542 50.35C211.467 51.5303 210.237 51.7499 209.062 51.7499C207.887 51.7499 206.603 51.448 205.601 50.35C204.626 49.2795 204.398 47.9712 204.398 46.9098C204.398 45.0342 205.045 43.7533 205.81 42.9023C206.995 41.594 208.343 41.3652 209.673 41.3652C210.52 41.3652 211.485 41.5116 212.332 42.0972C212.952 42.5272 213.508 43.2317 213.863 43.8813L211.859 44.9976C211.686 44.595 211.376 44.1467 210.984 43.863C210.492 43.5062 209.955 43.4513 209.545 43.4513C208.78 43.4513 208.142 43.6435 207.568 44.2839C206.949 44.9701 206.648 45.9491 206.648 46.8092C206.648 47.5686 206.913 48.4195 207.423 48.941C208.015 49.5723 208.78 49.6547 209.363 49.6547C209.8 49.6547 210.392 49.5632 210.866 49.2063C211.203 48.9502 211.531 48.4927 211.677 47.9254H209.399L209.609 46.0955L209.591 46.1047Z" fill="currentColor"></path></g></symbol></svg>
+
+<div class="progress-rail"><div class="progress-fill" id="progressFill"></div></div>
+<button class="fullscreen-btn" id="fsBtn" type="button">Fullscreen</button>
+<button class="video-pause-btn" id="videoPauseBtn" type="button" aria-label="Pause video">Pause</button>
+<div class="click-zone prev" id="zonePrev" aria-hidden="true"></div>
+<div class="click-zone next" id="zoneNext" aria-hidden="true"></div>
+<div class="counter" id="counter" aria-live="polite" aria-atomic="true"><strong>01</strong> / 08</div>
+<div class="nav-hint" id="navHint">→ / space to advance</div>
+
+<div class="deck" id="deck">
+
+  <!-- 1: TITLE -->
+  <section class="slide slide--title active" data-slide="1">
+    <div class="eyebrow slide-eyebrow">42 WOLFSBURG &middot; AI FOR FUTURE WORKFORCE &middot; HACKATHON 2026</div>
+    <h1 class="wordmark"><span class="fit">FIT</span> <span class="happens">HAPPENS</span></h1>
+    <p class="subhead">Recruiting's AI problem is different and growing. Needs a scalable answer that isn't just more keyword matching.</p>
+    <div class="team-line">
+      <img class="team-mark-inline" src="assets/img/whiskey.svg" alt="Orange Whiskey" width="60" height="98">
+      <div class="team-line-text">
+        <span class="who">Orange Whiskey &middot;</span>
+        <span class="batch-tag">Small batch &middot; hackathon reserve</span>
+      </div>
+    </div>
+    <svg class="venue-logo" aria-hidden="true"><use href="#wolfsburg-logo"></use></svg>
+  </section>
+
+  <!-- 2: PROBLEM (merged with scale/why-now) -->
+  <!-- Speaker note: land on the two-part problem, don't rush past it. Let the hours number land before moving on. -->
+  <section class="slide" data-slide="2">
+    <div class="eyebrow slide-eyebrow">The problem &middot; as per industry experts</div>
+    <h2 class="headline">Resumes are optimized<br>for the algorithm,<br><span class="accent">not the job.*</span></h2>
+    <p class="subhead">At 15,000&ndash;20,000 resumes a year, that's nearly half a recruiter's working year lost to first-pass triage alone.</p>
+    <div class="stat-row">
+      <div class="stat"><span class="stat-num">3 min</span><span class="stat-label">average manual screening time, per resume</span></div>
+      <div class="stat"><span class="stat-num">~1,000</span><span class="stat-label">hours a year that costs one team</span></div>
+      <div class="stat"><span class="stat-num">0</span><span class="stat-label">of it spent telling a great candidate from a great prompt</span></div>
+    </div>
+    <p class="kicker">Keyword matching can't tell the difference either.</p>
+    <p class="slide-footnote">*A growing share of them aren't even written by the person applying.</p>
+  </section>
+
+  <!-- 3: THE INSIGHT / TWO DOORMEN -->
+  <section class="slide" data-slide="3">
+    <div class="eyebrow slide-eyebrow">The solution</div>
+    <h2 class="headline">Fit and authenticity<br>are <span class="accent">two different questions.</span></h2>
+    <p class="subhead">Most screening tools only ever ask one, and never say which.</p>
+    <div class="doormen-grid">
+      <div class="doorman-card">
+        <span class="doorman-tag teal">FIT ENGINE</span>
+        <h3>Scores the match</h3>
+        <p>Maps what a resume claims to what the role needs. Writing quality never moves the number.</p>
+      </div>
+      <div class="doorman-card">
+        <span class="doorman-tag">SLOP BOUNCER</span>
+        <h3>Screens for slop</h3>
+        <p>Checks AI-writing style and claim authenticity, three times across the pipeline. Flags — never rejects.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4: HOW IT WORKS -->
+  <section class="slide" data-slide="4">
+    <div class="eyebrow slide-eyebrow">How it works</div>
+    <h2 class="headline">One pipeline,<br><span class="accent">five checkpoints.</span></h2>
+    <div class="beats">
+      <div class="beat"><span class="beat-num">01</span><span class="beat-word">Upload</span><span class="beat-desc">resume comes in</span></div>
+      <span class="beat-arrow">&rarr;</span>
+      <div class="beat"><span class="beat-num">02</span><span class="beat-word">Screen</span><span class="beat-desc">Bouncer checks style &amp; claims</span></div>
+      <span class="beat-arrow">&rarr;</span>
+      <div class="beat"><span class="beat-num">03</span><span class="beat-word">Score</span><span class="beat-desc">Fit Engine maps to the role</span></div>
+      <span class="beat-arrow">&rarr;</span>
+      <div class="beat"><span class="beat-num">04</span><span class="beat-word">Ask</span><span class="beat-desc">follow-ups close the gaps</span></div>
+      <span class="beat-arrow">&rarr;</span>
+      <div class="beat"><span class="beat-num">05</span><span class="beat-word">Decide</span><span class="beat-desc">a human, always</span></div>
+    </div>
+  </section>
+
+  <!-- 5: Result -->
+  <!-- Speaker note: let the table land, then read the caption slowly. This is the wow moment. -->
+  <section class="slide" data-slide="5">
+    <div class="eyebrow slide-eyebrow">The Result</div>
+    <h2 class="headline">Same job. Six profiles.<br><span class="accent">One honest ranking.</span></h2>
+    <div class="proof-table-wrap">
+      <table class="proof" id="proofTable">
+        <thead>
+          <tr><th scope="col">Candidate</th><th scope="col">Bluff Risk</th><th scope="col">Slop Bouncer</th><th scope="col" class="num">Fit score</th><th scope="col">Next step</th><th scope="col">Response</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Isabella Rossi</td><td><span class="pill mid">MEDIUM</span></td><td><span class="pill mid">MEDIUM</span></td><td class="num hit">99%</td><td><select class="next-step review" aria-label="Next step for Isabella Rossi"><option selected>Review</option><option>Interview</option><option>Hold</option></select></td><td><span class="pill">LOW RISK</span></td></tr>
+          <tr><td>Naledi Dube</td><td><span class="pill">LOW</span></td><td><span class="pill">LOW</span></td><td class="num hit">95%</td><td><select class="next-step interview" aria-label="Next step for Naledi Dube"><option selected>Interview</option><option>Review</option><option>Hold</option></select></td><td><span class="pill none">&mdash;</span></td></tr>
+          <tr><td>Marco Bellini</td><td><span class="pill flag">HIGH</span></td><td><span class="pill flag">HIGH</span></td><td class="num">76%</td><td><select class="next-step review" aria-label="Next step for Marco Bellini"><option>Interview</option><option selected>Review</option><option>Hold</option></select></td><td><span class="pill flag">NOT COOPERATED</span></td></tr>
+          <tr><td>Daniel Kowalski</td><td><span class="pill mid">MEDIUM</span></td><td><span class="pill">LOW</span></td><td class="num">71%</td><td><select class="next-step interview" aria-label="Next step for Daniel Kowalski"><option selected>Interview</option><option>Review</option><option>Hold</option></select></td><td><span class="pill mid">PENDING</span></td></tr>
+          <tr class="threshold-row"><td colspan="6">70% — where a manual reviewer's attention usually runs out. Everyone below still gets a full, fair score.</td></tr>
+          <tr class="ghosted"><td>Aisha Abdullah</td><td><span class="pill">LOW</span></td><td><span class="pill">LOW</span></td><td class="num">59%</td><td><select class="next-step hold" aria-label="Next step for Aisha Abdullah"><option>Interview</option><option>Review</option><option selected>Hold</option></select></td><td><span class="pill none">&mdash;</span></td></tr>
+          <tr class="ghosted"><td>Tyler Brooks</td><td><span class="pill">LOW</span></td><td><span class="pill">LOW</span></td><td class="num">14%</td><td><select class="next-step hold" aria-label="Next step for Tyler Brooks"><option>Interview</option><option>Review</option><option selected>Hold</option></select></td><td><span class="pill none">&mdash;</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="proof-caption" style="display: none;">Isabella's resume mirrors this posting almost line for line — great writing, great fit, top score. Slop Bouncer marks it CHECK, not FLAGGED: worth a second look, not proof of anything. Naledi's bullets are flat. Daniel's resume reads like a career coach wrote it. Neither mattered — the ranking read backgrounds, not prose. Marco's resume is the best-written one in the pool, and scores 76% on fit alone. Slop Bouncer catches what fit can't: his claimed years don't match his own dates.</p>
+  </section>
+
+  <!-- 6: DEMO CUE -->
+  <section class="slide slide--cue" data-slide="6">
+    <div class="eyebrow slide-eyebrow"><span class="pulse-dot"></span>Live now</div>
+    <h2 class="headline">Let's watch<br>it <span class="accent">work.</span></h2>
+    <p class="subhead">A real resume. A real job description. A real score, computed right now.</p>
+  </section>
+
+  <!-- 7: DEMO VIDEO -->
+  <section class="slide slide--video" data-slide="7">
+    <video id="demoVideo" class="demo-video" playsinline preload="auto">
+      <source src="assets/img/HackDemo.mp4" type="video/mp4">
+    </video>
+  </section>
+
+  <!-- 8: CLOSE -->
+  <section class="slide slide--close" data-slide="8">
+    <h2 class="headline"><span class="accent">Fit</span> happens.<br>Slop doesn't have to.</h2>
+    <p class="subhead">Orange Whiskey &middot; thank you.</p>
+    <svg class="venue-logo" aria-hidden="true"><use href="#wolfsburg-logo"></use></svg>
+    <img class="team-mark" src="assets/img/whiskey.svg" alt="Orange Whiskey" width="100" height="163">
+  </section>
+
+</div>
+
+<script src="assets/js/gsap.min.js"></script>
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var total = slides.length;
+  var current = 0;
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var counterEl = document.getElementById('counter');
+  var fillEl = document.getElementById('progressFill');
+  var navHint = document.getElementById('navHint');
+  var demoVideo = document.getElementById('demoVideo');
+  var videoPauseBtn = document.getElementById('videoPauseBtn');
+
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+  function render(newIndex, direction) {
+    if (newIndex < 0 || newIndex >= total || newIndex === current) return;
+    var outgoing = slides[current];
+    var incoming = slides[newIndex];
+    direction = direction || (newIndex > current ? 1 : -1);
+
+    if (typeof gsap !== 'undefined' && !reduceMotion) {
+      gsap.set(incoming, { opacity: 0, x: direction * 24, visibility: 'visible', pointerEvents: 'auto' });
+      incoming.classList.add('active');
+      gsap.to(outgoing, { opacity: 0, x: direction * -24, duration: 0.22, ease: 'power2.in', onComplete: function () {
+        outgoing.classList.remove('active');
+        gsap.set(outgoing, { x: 0, visibility: 'hidden', pointerEvents: 'none' });
+      }});
+      gsap.to(incoming, { opacity: 1, x: 0, duration: 0.3, ease: 'power3.out', delay: 0.03 });
+
+      if (incoming.dataset.slide === '5') {
+        var rows = incoming.querySelectorAll('table.proof tbody tr');
+        gsap.set(rows, { opacity: 0, y: 8 });
+        gsap.to(rows, { opacity: 1, y: 0, duration: 0.26, stagger: 0.05, delay: 0.15, ease: 'power2.out' });
+      }
+    } else {
+      outgoing.classList.remove('active');
+      incoming.classList.add('active');
+    }
+
+    current = newIndex;
+    counterEl.innerHTML = '<strong>' + pad(current + 1) + '</strong> / ' + pad(total);
+    fillEl.style.transform = 'scaleX(' + ((current + 1) / total) + ')';
+    navHint.classList.add('hidden');
+
+    if (demoVideo) {
+      if (incoming.dataset.slide === '7') {
+        demoVideo.currentTime = 0;
+        demoVideo.play().catch(function () {});
+        if (videoPauseBtn) videoPauseBtn.classList.add('visible');
+      } else if (outgoing.dataset.slide === '7') {
+        demoVideo.pause();
+        if (videoPauseBtn) videoPauseBtn.classList.remove('visible');
+      }
+    }
+  }
+
+  function next() { render(current + 1, 1); }
+  function prev() { render(current - 1, -1); }
+
+  document.getElementById('zoneNext').addEventListener('click', next);
+  document.getElementById('zonePrev').addEventListener('click', prev);
+
+  window.addEventListener('keydown', function (e) {
+    if (['ArrowRight', 'PageDown', ' '].indexOf(e.key) > -1) { e.preventDefault(); next(); }
+    else if (['ArrowLeft', 'PageUp'].indexOf(e.key) > -1) { e.preventDefault(); prev(); }
+    else if (e.key === 'Home') { e.preventDefault(); render(0, -1); }
+    else if (e.key === 'End') { e.preventDefault(); render(total - 1, 1); }
+  });
+
+  document.getElementById('fsBtn').addEventListener('click', function () {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(function () {});
+    else document.exitFullscreen();
+  });
+
+  if (demoVideo && videoPauseBtn) {
+    videoPauseBtn.addEventListener('click', function () {
+      if (demoVideo.paused) demoVideo.play().catch(function () {});
+      else demoVideo.pause();
+    });
+    demoVideo.addEventListener('play', function () { videoPauseBtn.textContent = 'Pause'; });
+    demoVideo.addEventListener('pause', function () { videoPauseBtn.textContent = 'Play'; });
+  }
+
+  counterEl.innerHTML = '<strong>' + pad(1) + '</strong> / ' + pad(total);
+  fillEl.style.transform = 'scaleX(' + (1 / total) + ')';
+})();
+</script>
+
+</body>
+</html>
